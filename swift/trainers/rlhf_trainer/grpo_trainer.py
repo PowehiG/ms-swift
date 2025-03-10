@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from queue import Queue
 from typing import Any, Callable, Dict, List, Optional, Union
+from PIL import Image as PILImage
 
 import numpy as np
 import torch
@@ -535,10 +536,19 @@ class GRPOTrainer(RLHFTrainerMixin, SwiftMixin, HFGRPOTrainer):
         })
         if self.log_completions and self.state.global_step % self.args.logging_steps == 0:
             # For logging
+            images_tmp = [inputs['images'][:] for inputs in gather_object(inputs)]
+            images = []
+            for imgs_info in images_tmp:
+                imgs = []
+                for img_info in imgs_info:
+                    if img_info is not None:
+                        img = PILImage.open(img_info['path'])
+                        imgs.append(wandb.Image(img, caption=img_info['path']))
+                images.append(imgs)
             table = {
                 'step': [str(self.state.global_step)] * len(rewards),
                 'messages': [inputs['messages'][:-1] for inputs in gather_object(inputs)],
-		'images': [inputs['images'][:-1] for inputs in gather_object(inputs)],
+		        'images': images,
                 'completion': gather_object(completions),
                 'reward': rewards.tolist(),
             }
