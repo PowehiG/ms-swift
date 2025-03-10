@@ -548,6 +548,7 @@ class GRPOTrainer(RLHFTrainerMixin, SwiftMixin, HFGRPOTrainer):
             table = {
                 'step': [str(self.state.global_step)] * len(rewards),
                 'messages': [inputs['messages'][:-1] for inputs in gather_object(inputs)],
+                'labels' : [inputs['solution'] for inputs in gather_object(inputs)],
 		        'images': images,
                 'completion': gather_object(completions),
                 'reward': rewards.tolist(),
